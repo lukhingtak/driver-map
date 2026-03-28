@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>美西司机导航工具_左侧城市版</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 280px;
+      background: #f8fafc;
+      border-right: 1px solid #e2e8f0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 20px;
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .sidebar-header .small {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .sidebar-header .title {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .city-list {
+      padding: 14px;
+    }
+    .city-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      background: #fff;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+    .city-btn:hover { border-color: #94a3b8; }
+    .city-btn.active {
+      background: #0f172a;
+      color: white;
+      border-color: #0f172a;
+    }
+    .city-btn .en {
+      display: block;
+      font-size: 12px;
+      margin-top: 4px;
+      color: #64748b;
+    }
+    .city-btn.active .en { color: rgba(255,255,255,.7); }
+
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .hero {
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 24px 20px 18px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .hero .eyebrow {
+      font-size: 12px;
+      opacity: .7;
+      margin-bottom: 6px;
+    }
+    .hero h1 {
+      font-size: 36px;
+      margin: 0;
+      line-height: 1.15;
+    }
+    .hero p {
+      margin: 8px 0 0;
+      opacity: .82;
+      font-size: 16px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .search {
+      flex: 1;
+      min-width: 220px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.1);
+      color: white;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 16px;
+      outline: none;
+    }
+    .search::placeholder { color: rgba(255,255,255,.58); }
+    .hint-btn {
+      border: 1px solid rgba(255,255,255,.14);
+      background: white;
+      color: #0f172a;
+      border-radius: 18px;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .mobile-city-strip {
+      display: none;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 14px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    .mobile-city-btn {
+      border: none;
+      background: #e2e8f0;
+      color: #334155;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .mobile-city-btn.active {
+      background: #0f172a;
+      color: white;
+    }
+
+    .content {
+      padding: 20px;
+    }
+    .city-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: 0 1px 2px rgba(15,23,42,.04);
+      margin-bottom: 18px;
+    }
+    .city-card .tag {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .city-card h2 {
+      margin: 8px 0 4px;
+      font-size: 34px;
+      line-height: 1.1;
+    }
+    .city-card .sub {
+      color: #64748b;
+      font-size: 15px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0 0 10px;
+      padding-left: 4px;
+    }
+    .items {
+      display: grid;
+      gap: 12px;
+    }
+    .item {
+      display: block;
+      text-decoration: none;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 22px;
+      padding: 16px;
+      color: inherit;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15,23,42,.06);
+      border-color: #cbd5e1;
+    }
+    .item-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .item-name {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .item-type {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .arrow {
+      color: #94a3b8;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .empty {
+      text-align: center;
+      color: #64748b;
+      padding: 50px 20px;
+    }
+
+    .note {
+      margin-top: 14px;
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .mobile-city-strip { display: flex; }
+      .hero h1 { font-size: 30px; }
+      .content { padding: 14px; }
+      .city-card h2 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="small">司机版目录</div>
+        <div class="title">城市列表</div>
+      </div>
+      <div class="city-list" id="sidebarCities"></div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="eyebrow">iPhone 版 · 司机专用 · 离线可用</div>
+        <h1>美西司机导航工具</h1>
+        <p>左侧按城市排列，点击进入后直接打开 Google Maps。</p>
+        <div class="toolbar">
+          <input id="searchInput" class="search" placeholder="搜索城市、景点、停车、加油、酒店…" />
+          <button class="hint-btn" id="hintBtn">使用说明</button>
+        </div>
+      </section>
+
+      <div class="mobile-city-strip" id="mobileCities"></div>
+
+      <section class="content">
+        <div id="content"></div>
+        <div class="note">
+          建议：先在 iPhone 的 Safari 打开，再点“分享”→“添加到主屏幕”，以后就像 App 一样使用。
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const data = [
+      {
+        city: "Las Vegas",
+        cityZh: "拉斯维加斯",
+        tag: "#LasVegas",
+        sections: [
+          {
+            title: "⭐ 必去",
+            items: [
+              { name: "Las Vegas Sign", url: "https://maps.app.goo.gl/L62r5dUevgjA17mW8?g_st=com.apple.sharing.quick-note", type: "景点" },
+              { name: "Bellagio 百乐宫", url: "https://maps.app.goo.gl/PY31SDPDQnbEJucY9?g_st=com.apple.sharing.quick-note", type: "酒店/景点" },
+              { name: "Venetian 威尼斯人", url: "https://maps.app.goo.gl/iaX2wwNRohta3iTA7?g_st=com.apple.sharing.quick-note", type: "酒店/景点" }
+            ]
+          },
+          {
+            title: "🛠 实用",
+            items: [
+              { name: "威尼斯地下停车场", url: "https://maps.app.goo.gl/Ww1KhcYQhUQeRK4s9?g_st=com.apple.sharing.quick-note", type: "停车" },
+              { name: "拉斯维加斯加油站", url: "https://maps.app.goo.gl/iHBEgQ1wmejAkF1Q6?g_st=com.apple.sharing.quick-note", type: "加油" },
+              { name: "老城灯光秀", url: "https://maps.app.goo.gl/2bmiyxZUokqhog6s7?g_st=com.apple.sharing.quick-note", type: "夜游/景点" }
+            ]
+          }
+        ]
+      },
+      {
+        city: "Los Angeles",
+        cityZh: "洛杉矶",
+        tag: "#LosAngeles",
+        sections: [
+          {
+            title: "⭐ 必去",
+            items: [
+              { name: "Beverly Hills Sign", url: "https://maps.app.goo.gl/4qiWYCxZvY6qy3d37", type: "景点" },
+              { name: "Santa Monica", url: "https://maps.app.goo.gl/gEqmzfgEqZz2PXxQ7", type: "景点" },
+              { name: "UCLA 正门", url: "https://maps.app.goo.gl/s7bXZKAFouNa23qeA", type: "校园" }
+            ]
+          },
+          {
+            title: "🛠 实用",
+            items: [
+              { name: "UCLA 停车", url: "https://maps.app.goo.gl/cBZDjTWVBehUHDcCA", type: "停车" },
+              { name: "LAX 停车场", url: "https://maps.app.goo.gl/FDVzVB3F5DKgv9Zs9", type: "机场/停车" },
+              { name: "威尼斯海滩", url: "https://maps.app.goo.gl/S65zduiBm4db3dtq5", type: "景点" }
+            ]
+          }
+        ]
+      },
+      {
+        city: "San Francisco",
+        cityZh: "旧金山",
+        tag: "#SanFrancisco",
+        sections: [
+          {
+            title: "⭐ 必去",
+            items: [
+              { name: "Union Square", url: "https://maps.app.goo.gl/hjgmhFupj8eeU8Px8", type: "景点" },
+              { name: "Golden Gate Bridge", url: "https://maps.app.goo.gl/FbnLAXDv4HVWpcZX9", type: "景点" },
+              { name: "Twin Peaks", url: "https://maps.app.goo.gl/KyfFZMDXQRE1RNaz6", type: "景点" }
+            ]
+          },
+          {
+            title: "🛠 实用",
+            items: [
+              { name: "市政府停车", url: "https://maps.app.goo.gl/vXThrikSvsLWCeFJ6", type: "停车" },
+              { name: "Post St Tour Bus 停车", url: "https://maps.app.goo.gl/8hchfqWhNpmjUPha7", type: "停车" },
+              { name: "缆车上车 California", url: "https://maps.app.goo.gl/WLJvJ1dwe7Tfevmd7", type: "交通" }
+            ]
+          }
+        ]
+      },
+      {
+        city: "Page",
+        cityZh: "佩吉",
+        tag: "#Page",
+        sections: [
+          {
+            title: "⭐ 必去",
+            items: [
+              { name: "Antelope Canyon 下羚羊", url: "https://maps.app.goo.gl/8FSUrnv6j1wyFwW67", type: "景点" },
+              { name: "Horseshoe Bend 马蹄湾", url: "https://maps.app.goo.gl/zzBhM19rGXZ7kBY47", type: "景点" },
+              { name: "Page 水库", url: "https://maps.app.goo.gl/9yGzjZNNN331PVgG8", type: "景点" }
+            ]
+          },
+          {
+            title: "🛠 实用",
+            items: [
+              { name: "Page 加油站", url: "https://maps.app.goo.gl/rhG1qpR7Xi15paQz5", type: "加油" },
+              { name: "Page 机场", url: "https://maps.app.goo.gl/JfJsvvNRATG2vW6E7", type: "机场" },
+              { name: "Page #8 酒店", url: "https://maps.app.goo.gl/WpFY1P9yVVqWoihv5", type: "酒店" }
+            ]
+          }
+        ]
+      },
+      {
+        city: "Yellowstone",
+        cityZh: "黄石",
+        tag: "#Yellowstone",
+        sections: [
+          {
+            title: "⭐ 必去",
+            items: [
+              { name: "大棱镜停车", url: "https://maps.app.goo.gl/CpWf13pq1uARZub18?g_st=com.apple.sharing.quick-note", type: "景点/停车" },
+              { name: "老忠实停车", url: "https://maps.app.goo.gl/zAJVCP1buwPzDGv76?g_st=com.apple.sharing.quick-note", type: "景点/停车" },
+              { name: "Artist Point", url: "https://maps.app.goo.gl/pywypqDUE482s4ks8?g_st=com.apple.sharing.quick-note", type: "景点" }
+            ]
+          },
+          {
+            title: "🛠 实用",
+            items: [
+              { name: "黄石西门", url: "https://maps.app.goo.gl/obWPFT6cYtScJVsg9?g_st=com.apple.sharing.quick-note", type: "入口" },
+              { name: "Fountain Point 停车", url: "https://maps.google.com/?q=44.5476565,-110.8078108&entry=gps", type: "停车" },
+              { name: "Best Western 酒店", url: "https://maps.app.goo.gl/7yZSybgi6V6mMjHd8?g_st=com.apple.sharing.quick-note", type: "酒店" }
+            ]
+          }
+        ]
+      }
+    ];
+
+    let query = "";
+    let selectedCity = data[0].city;
+
+    function getFilteredCities() {
+      const q = query.trim().toLowerCase();
+      if (!q) return data;
+      return data.filter(city => {
+        if (city.city.toLowerCase().includes(q) || city.cityZh.includes(query)) return true;
+        return city.sections.some(section =>
+          section.items.some(item =>
+            item.name.toLowerCase().includes(q) || item.type.includes(query)
+          )
+        );
+      });
+    }
+
+    function renderCityButtons() {
+      const filtered = getFilteredCities();
+      const sidebar = document.getElementById("sidebarCities");
+      const mobile = document.getElementById("mobileCities");
+      sidebar.innerHTML = "";
+      mobile.innerHTML = "";
+
+      filtered.forEach(city => {
+        const btn = document.createElement("button");
+        btn.className = "city-btn" + (selectedCity === city.city ? " active" : "");
+        btn.innerHTML = `<strong>${city.cityZh}</strong><span class="en">${city.city}</span>`;
+        btn.onclick = () => {
+          selectedCity = city.city;
+          render();
+        };
+        sidebar.appendChild(btn);
+
+        const mb = document.createElement("button");
+        mb.className = "mobile-city-btn" + (selectedCity === city.city ? " active" : "");
+        mb.textContent = city.cityZh;
+        mb.onclick = () => {
+          selectedCity = city.city;
+          render();
+        };
+        mobile.appendChild(mb);
+      });
+    }
+
+    function renderContent() {
+      const filtered = getFilteredCities();
+      const current = filtered.find(c => c.city === selectedCity) || filtered[0];
+      const content = document.getElementById("content");
+
+      if (!current) {
+        content.innerHTML = `<div class="empty">没有找到相关城市或点位</div>`;
+        return;
+      }
+
+      selectedCity = current.city;
+
+      content.innerHTML = `
+        <div class="city-card">
+          <div class="tag">${current.tag}</div>
+          <h2>${current.cityZh}</h2>
+          <div class="sub">${current.city}</div>
+        </div>
+        ${current.sections.map(section => `
+          <div class="section">
+            <div class="section-title">${section.title}</div>
+            <div class="items">
+              ${section.items.map(item => `
+                <a class="item" href="${item.url}" target="_blank" rel="noreferrer">
+                  <div class="item-row">
+                    <div>
+                      <div class="item-name">${item.name}</div>
+                      <div class="item-type">${item.type}</div>
+                    </div>
+                    <div class="arrow">↗</div>
+                  </div>
+                </a>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      `;
+    }
+
+    function render() {
+      renderCityButtons();
+      renderContent();
+    }
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      query = e.target.value;
+      render();
+    });
+
+    document.getElementById("hintBtn").addEventListener("click", () => {
+      alert("用法：\\n1. 左侧点城市（iPhone 窄屏会显示为顶部城市栏）\\n2. 点任一地点条目\\n3. 自动跳转 Google Maps\\n\\n建议：在 Safari 打开后，点“分享”→“添加到主屏幕”。");
+    });
+
+    render();
+  </script>
+</body>
+</html>
